@@ -4,7 +4,7 @@ const rateLimit = require("express-rate-limit");
 const router = express.Router();
 
 
-// Simple abuse protection
+// Rate limit protection
 const contactLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 5,
@@ -12,14 +12,23 @@ const contactLimiter = rateLimit({
   legacyHeaders: false,
   message: {
     error: "Too many messages sent. Please try again later."
-  },
+  }
 });
 
 
+// Email validation
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 
-// POST /api/contact
+// Test route
+router.get("/", (req, res) => {
+  res.json({
+    message: "Contact route working successfully"
+  });
+});
+
+
+// POST contact form
 router.post("/", contactLimiter, async (req, res) => {
 
   try {
@@ -29,21 +38,21 @@ router.post("/", contactLimiter, async (req, res) => {
 
     if (!name || !email || !message) {
       return res.status(400).json({
-        error: "name, email, and message are all required."
+        error: "name, email, and message are required"
       });
     }
 
 
     if (!EMAIL_RE.test(email)) {
       return res.status(400).json({
-        error: "Please provide a valid email address."
+        error: "Invalid email address"
       });
     }
 
 
-    if (message.length < 10) {
+    if (message.trim().length < 10) {
       return res.status(400).json({
-        error: "Message is too short."
+        error: "Message is too short"
       });
     }
 
@@ -59,11 +68,11 @@ router.post("/", contactLimiter, async (req, res) => {
 
     res.status(201).json({
       success: true,
-      message: "Message received successfully"
+      message: "Message sent successfully"
     });
 
 
-  } catch (err) {
+  } catch (error) {
 
     res.status(500).json({
       error: "Server error"
